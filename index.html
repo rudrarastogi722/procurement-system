@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProcureEase – Construction Material Procurement System</title>
+    <style>
+        /* ===== RESET & VARIABLES ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary:   #1a3c5e;
+            --secondary: #f0a500;
+            --accent:    #2ecc71;
+            --danger:    #e74c3c;
+            --light:     #f4f6f9;
+            --dark:      #2c3e50;
+            --card-bg:   #ffffff;
+            --text:      #333333;
+            --text-muted:#666666;
+            --border:    #dde3ea;
+            --sidebar-w: 260px;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--primary);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .sidebar-logo {
+            padding: 22px 20px;
+            border-bottom: 1px solid rgba(255,255,255,.12);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: var(--secondary);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+        }
+        .sidebar-logo h2 { font-size: 17px; font-weight: 700; }
+        .sidebar-logo p  { font-size: 11px; opacity: .65; }
+
+        .sidebar-menu { list-style: none; padding: 10px 0; }
+        .section-label {
+            padding: 14px 24px 5px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            opacity: .45;
+        }
+        .sidebar-menu li a {
+            display: flex; align-items: center; gap: 13px;
+            padding: 13px 24px;
+            color: rgba(255,255,255,.72);
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all .2s;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-menu li a:hover,
+        .sidebar-menu li a.active {
+            background: rgba(255,255,255,.11);
+            color: white;
+            border-left-color: var(--secondary);
+        }
+        .sidebar-menu li a .icon { font-size: 17px; width: 22px; text-align: center; }
+
+        /* ===== TOPBAR ===== */
+        .main-content { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+        .topbar {
+            background: white;
+            padding: 15px 30px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 50;
+            box-shadow: 0 1px 8px rgba(0,0,0,.05);
+        }
+        .topbar-left h1 { font-size: 19px; color: var(--dark); }
+        .topbar-left p  { font-size: 12.5px; color: var(--text-muted); }
+        .topbar-right   { display: flex; align-items: center; gap: 14px; }
+        .team-badge {
+            background: var(--primary); color: white;
+            padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .user-avatar {
+            width: 36px; height: 36px; background: var(--secondary);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: white; font-size: 13px;
+        }
+
+        /* ===== PAGE SHELL ===== */
+        .page { display: none; padding: 28px 30px; animation: fadeIn .3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .page-title    { font-size: 21px; font-weight: 700; color: var(--dark); margin-bottom: 3px; }
+        .page-subtitle { font-size: 13.5px; color: var(--text-muted); margin-bottom: 22px; }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: white; border-radius: 13px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.055);
+            border: 1px solid var(--border); overflow: hidden; margin-bottom: 22px;
+        }
+        .card-header {
+            padding: 16px 22px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .card-header h2 { font-size: 15px; color: var(--dark); }
+        .card-body { padding: 22px; }
+
+        /* ===== STATS GRID ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px; margin-bottom: 22px;
+        }
+        .stat-card {
+            background: white; border-radius: 13px; padding: 20px;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.055);
+            border: 1px solid var(--border);
+        }
+        .stat-icon {
+            width: 50px; height: 50px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px;
+        }
+        .stat-info h3 { font-size: 24px; font-weight: 700; color: var(--dark); }
+        .stat-info p  { font-size: 12.5px; color: var(--text-muted); }
+
+        /* ===== TABLES ===== */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        thead th {
+            background: var(--light); padding: 11px 15px;
+            text-align: left; font-weight: 600; color: var(--text-muted);
+            font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px;
+        }
+        tbody td { padding: 13px 15px; border-bottom: 1px solid var(--border); color: var(--text); }
+        tbody tr:hover { background: #fafbfc; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* ===== BADGES ===== */
+        .badge {
+            padding: 3px 11px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; display: inline-block;
+        }
+        .badge-success { background:#e8f5e9; color:#2e7d32; }
+        .badge-warning { background:#fff3e0; color:#e65100; }
+        .badge-info    { background:#e3f2fd; color:#1565c0; }
+        .badge-danger  { background:#fce4ec; color:#c62828; }
+        .badge-primary { background:#e8eaf6; color:#283593; }
+
+        /* ===== ALERTS ===== */
+        .alert {
+            padding: 12px 16px; border-radius: 9px; margin-bottom: 14px;
+            font-size: 13.5px; display: flex; align-items: center; gap: 9px;
+        }
+        .alert-success { background:#e8f5e9; color:#2e7d32; border-left:4px solid var(--accent); }
+        .alert-warning { background:#fff8e1; color:#e65100; border-left:4px solid var(--secondary); }
+        .alert-info    { background:#e3f2fd; color:#1565c0; border-left:4px solid #1565c0; }
+
+        /* ===== FORMS ===== */
+        .form-grid {
+            display: grid; grid-template-columns: repeat(3,1fr); gap: 18px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 12.5px; font-weight: 600; color: var(--dark); }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 9px 13px; border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 13.5px; outline: none; font-family: inherit;
+            transition: border-color .2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus { border-color: var(--primary); }
+        .form-group.span2 { grid-column: span 2; }
+        .form-group.span3 { grid-column: 1 / -1; }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 9px 20px; border-radius: 8px; border: none;
+            font-size: 13.5px; font-weight: 600; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 7px; transition: all .2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #1e4f7a; transform: translateY(-1px); }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-secondary:hover { background: #e09400; }
+        .btn-success  { background: var(--accent); color: white; }
+        .btn-danger   { background: var(--danger); color: white; }
+        .btn-outline  { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: white; }
+
+        /* ===== PROGRESS BARS ===== */
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; }
+
+        /* ===== MINI BAR CHART ===== */
+        .bar-chart { display: flex; flex-direction: column; gap: 11px; }
+        .bar-row   { display: flex; align-items: center; gap: 10px; }
+        .bar-label { width: 115px; font-size: 12.5px; color: var(--text-muted); flex-shrink: 0; }
+        .bar-track { flex: 1; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+        .bar-fill  { height: 100%; border-radius: 5px; }
+        .bar-value { width: 70px; text-align: right; font-size: 12.5px; font-weight: 600; }
+
+        /* ===== 2-COL / CHART GRID ===== */
+        .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+        .chart-grid{ display: grid; grid-template-columns: 2fr 1fr; gap: 22px; }
+
+        /* ===== DONUT LEGEND ===== */
+        .donut-legend { display: flex; flex-direction: column; gap: 10px; }
+        .donut-item   { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+        .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ===== TIMELINE ===== */
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before {
+            content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+            width: 2px; background: var(--border);
+        }
+        .timeline-item { position: relative; margin-bottom: 18px; }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -20px; top: 5px;
+            width: 13px; height: 13px; border-radius: 50%;
+            border: 2px solid white; background: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        .timeline-item.done::before    { background: var(--accent);    box-shadow: 0 0 0 2px var(--accent);    }
+        .timeline-item.pending::before { background: var(--secondary); box-shadow: 0 0 0 2px var(--secondary); }
+        .timeline-item.late::before    { background: var(--danger);    box-shadow: 0 0 0 2px var(--danger);    }
+        .timeline-date  { font-size: 11px; color: var(--text-muted); }
+        .timeline-title { font-size: 13.5px; font-weight: 600; }
+        .timeline-sub   { font-size: 12px; color: var(--text-muted); }
+
+        /* ===== COST SIMULATOR ===== */
+        .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+        .mat-row {
+            display: grid; grid-template-columns: 2fr 1fr 1fr 36px;
+            gap: 8px; align-items: end;
+            padding: 12px; background: var(--light);
+            border: 1.5px solid var(--border); border-radius: 9px; margin-bottom: 10px;
+        }
+        .mat-row label { font-size: 11.5px; font-weight: 600; color: var(--dark); display: block; margin-bottom: 4px; }
+        .mat-row input,
+        .mat-row select { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 7px; font-size: 13px; width: 100%; }
+        .remove-btn {
+            width: 34px; height: 34px; background: var(--danger); color: white;
+            border: none; border-radius: 7px; cursor: pointer; font-size: 15px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ===== COST SUMMARY PANEL ===== */
+        .cost-panel {
+            background: var(--primary); color: white;
+            border-radius: 13px; padding: 22px; position: sticky; top: 90px;
+        }
+        .cost-panel h3 { font-size: 15px; margin-bottom: 18px; opacity: .9; }
+        .cost-line {
+            display: flex; justify-content: space-between;
+            padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.14);
+            font-size: 13.5px;
+        }
+        .cost-line:last-child { border-bottom: none; }
+        .cost-total {
+            display: flex; justify-content: space-between;
+            padding: 15px 0; font-size: 20px; font-weight: 700;
+            border-top: 2px solid rgba(255,255,255,.3); margin-top: 8px;
+        }
+        .cost-total span:last-child { color: var(--secondary); }
+
+        /* ===== QUOTE CARDS ===== */
+        .quotes-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-bottom: 22px; }
+        .quote-card {
+            border: 2px solid var(--border); border-radius: 12px;
+            padding: 18px; transition: all .2s;
+        }
+        .quote-card.best { border-color: var(--accent); background: #f0fff4; }
+        .quote-card .sup-name { font-size: 15px; font-weight: 700; color: var(--dark); }
+        .quote-price { font-size: 26px; font-weight: 700; color: var(--primary); margin: 6px 0; }
+        .best-label {
+            background: var(--accent); color: white;
+            padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700;
+        }
+        .quote-detail { font-size: 12.5px; display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+
+        /* ===== SECTION DIVIDER ===== */
+        hr.divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+        /* ===== TEAM MEMBER CARD ===== */
+        .member-card {
+            display: flex; align-items: center; gap: 13px;
+            padding: 13px; background: var(--light); border-radius: 10px; margin-bottom: 12px;
+        }
+        .avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: white; font-size: 14px; flex-shrink: 0;
+        }
+        .member-name  { font-weight: 700; font-size: 14px; }
+        .member-reg   { font-size: 12px; color: var(--text-muted); }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center; padding: 18px 0;
+            font-size: 12px; color: var(--text-muted);
+            border-top: 1px solid var(--border); margin-top: auto;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1100px) {
+            .stats-grid  { grid-template-columns: repeat(2,1fr); }
+            .chart-grid  { grid-template-columns: 1fr; }
+            .sim-grid    { grid-template-columns: 1fr; }
+            .quotes-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 768px) {
+            :root { --sidebar-w: 0px; }
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .stats-grid  { grid-template-columns: 1fr 1fr; }
+            .two-col     { grid-template-columns: 1fr; }
+            .form-grid   { grid-template-columns: 1fr; }
+            .page        { padding: 16px; }
+            .topbar      { padding: 12px 16px; }
+            .quotes-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================== SIDEBAR ============================== -->
+<nav class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-icon">🏗️</div>
+        <div>
+            <h2>ProcureEase</h2>
+            <p>Construction Procurement</p>
+        </div>
+    </div>
+    <ul class="sidebar-menu">
+        <li class="section-label">MAIN</li>
+        <li><a onclick="showPage('dashboard')" id="nav-dashboard" class="active"><span class="icon">📊</span>Dashboard</a></li>
+
+        <li class="section-label">PROCUREMENT</li>
+        <li><a onclick="showPage('requests')"   id="nav-requests"><span class="icon">📋</span>Material Requests</a></li>
+        <li><a onclick="showPage('suppliers')"  id="nav-suppliers"><span class="icon">🏭</span>Suppliers</a></li>
+        <li><a onclick="showPage('quotations')" id="nav-quotations"><span class="icon">📝</span>Quotation Comparison</a></li>
+        <li><a onclick="showPage('purchase')"   id="nav-purchase"><span class="icon">🛒</span>Purchase Orders</a></li>
+        <li><a onclick="showPage('delivery')"   id="nav-delivery"><span class="icon">🚚</span>Delivery Status</a></li>
+
+        <li class="section-label">TOOLS</li>
+        <li><a onclick="showPage('simulator')"  id="nav-simulator"><span class="icon">🧮</span>Cost Simulator</a></li>
+
+        <li class="section-label">INFO</li>
+        <li><a onclick="showPage('team')"       id="nav-team"><span class="icon">👥</span>Team Info</a></li>
+    </ul>
+</nav>
+
+<!-- ============================== MAIN CONTENT ============================== -->
+<div class="main-content">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <h1 id="topbar-title">Dashboard</h1>
+            <p  id="topbar-sub">Welcome to ProcureEase – Construction Material Procurement System</p>
+        </div>
+        <div class="topbar-right">
+            <span class="team-badge">🏗️ The &lt;body&gt; Builders</span>
+            <div class="user-avatar">RR</div>
+        </div>
+    </div>
+
+    <!-- ===================== PAGE: DASHBOARD ===================== -->
+    <div class="page active" id="page-dashboard">
+        <p class="page-title">📊 Procurement Dashboard</p>
+        <p class="page-subtitle">Live overview of all construction procurement activities</p>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e3f2fd;">📋</div>
+                <div class="stat-info"><h3 id="stat-total-req">24</h3><p>Total Requests</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e8f5e9;">✅</div>
+                <div class="stat-info"><h3>17</h3><p>Approved Orders</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fff3e0;">🚚</div>
+                <div class="stat-info"><h3>8</h3><p>Pending Deliveries</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fce4ec;">💰</div>
+                <div class="stat-info"><h3>₹4.2L</h3><p>Total Spend</p></div>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div class="alert alert-warning">⚠️ <strong>3 deliveries</strong> are overdue — Cement (Site B), Steel Rods (Site A), Sand (Site C)</div>
+        <div class="alert alert-info">📩 <strong>2 new quotations</strong> received from BuildMart Supplies and QuickBuild Co.</div>
+        <div class="alert alert-success">✅ Purchase Order <strong>#PO-2026-041</strong> has been approved and dispatched.</div>
+
+        <!-- Charts Row -->
+        <div class="chart-grid">
+            <div class="card">
+                <div class="card-header"><h2>📦 Material Spending Overview</h2></div>
+                <div class="card-body">
+                    <div class="bar-chart">
+                        <div class="bar-row">
+                            <span class="bar-label">Cement</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:85%;background:#1a3c5e;"></div></div>
+                            <span class="bar-value">₹1,20,000</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Steel</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:70%;background:#f0a500;"></div></div>
+                            <span class="bar-value">₹98,500</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Sand</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:54%;background:#2ecc71;"></div></div>
+                            <span class="bar-value">₹72,000</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Bricks</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:45%;background:#e74c3c;"></div></div>
+                            <span class="bar-value">₹61,000</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Gravel</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:36%;background:#9b59b6;"></div></div>
+                            <span class="bar-value">₹48,500</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Plywood</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:24%;background:#e67e22;"></div></div>
+                            <span class="bar-value">₹22,000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h2>📊 Order Status</h2></div>
+                <div class="card-body">
+                    <div style="text-align:center; margin-bottom:18px;">
+                        <svg viewBox="0 0 100 100" width="130" height="130">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#eee" stroke-width="14"/>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#2ecc71" stroke-width="14"
+                                stroke-dasharray="106 145" stroke-dashoffset="0"
+                                transform="rotate(-90 50 50)"/>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#f0a500" stroke-width="14"
+                                stroke-dasharray="58 145" stroke-dashoffset="-106"
+                                transform="rotate(-90 50 50)"/>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#e74c3c" stroke-width="14"
+                                stroke-dasharray="36 145" stroke-dashoffset="-164"
+                                transform="rotate(-90 50 50)"/>
+                            <text x="50" y="54" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">24</text>
+                        </svg>
+                    </div>
+                    <div class="donut-legend">
+                        <div class="donut-item"><div class="dot" style="background:#2ecc71"></div><span>Delivered (42%)</span><strong style="margin-left:auto">10</strong></div>
+                        <div class="donut-item"><div class="dot" style="background:#f0a500"></div><span>In Transit (25%)</span><strong style="margin-left:auto">6</strong></div>
+                        <div class="donut-item"><div class="dot" style="background:#e74c3c"></div><span>Delayed (16%)</span><strong style="margin-left:auto">4</strong></div>
+                        <div class="donut-item"><div class="dot" style="background:#eee"></div><span>Pending (17%)</span><strong style="margin-left:auto">4</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Requests -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🕐 Recent Material Requests</h2>
+                <button class="btn btn-primary" onclick="showPage('requests')">View All →</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Material</th><th>Qty</th><th>Site</th><th>Requested By</th><th>Date</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>#MR-001</td><td>Cement (OPC 53)</td><td>500 Bags</td><td>Site A – Block 3</td><td>Rudra Rastogi</td><td>01 Nov 2026</td><td><span class="badge badge-success">Approved</span></td></tr>
+                        <tr><td>#MR-002</td><td>TMT Steel Rods</td><td>2 Tons</td><td>Site B – Foundation</td><td>Member 2</td><td>31 Oct 2026</td><td><span class="badge badge-warning">Pending</span></td></tr>
+                        <tr><td>#MR-003</td><td>River Sand</td><td>10 Loads</td><td>Site A – Block 1</td><td>Member 3</td><td>30 Oct 2026</td><td><span class="badge badge-info">In Transit</span></td></tr>
+                        <tr><td>#MR-004</td><td>Red Bricks</td><td>5,000 Units</td><td>Site C – Walls</td><td>Rudra Rastogi</td><td>28 Oct 2026</td><td><span class="badge badge-danger">Delayed</span></td></tr>
+                        <tr><td>#MR-005</td><td>Plywood Sheets</td><td>80 Sheets</td><td>Site B – Shuttering</td><td>Member 2</td><td>27 Oct 2026</td><td><span class="badge badge-success">Delivered</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- end dashboard -->
+
+    <!-- ===================== PAGE: MATERIAL REQUESTS ===================== -->
+    <div class="page" id="page-requests">
+        <p class="page-title">📋 Material Requests</p>
+        <p class="page-subtitle">Submit and track construction material procurement requests</p>
+
+        <div class="card">
+            <div class="card-header"><h2>➕ New Material Request</h2></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Material Name *</label>
+                        <select id="req-material">
+                            <option value="">— Select Material —</option>
+                            <option>Cement (OPC 53)</option>
+                            <option>TMT Steel Rods</option>
+                            <option>River Sand</option>
+                            <option>Red Bricks</option>
+                            <option>Coarse Aggregate</option>
+                            <option>Plywood Sheets</option>
+                            <option>Paint (Exterior)</option>
+                            <option>PVC Pipes</option>
+                            <option>Electrical Wiring</option>
+                            <option>Gravel</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" id="req-qty" placeholder="e.g. 500" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Unit</label>
+                        <select id="req-unit">
+                            <option>Bags</option><option>Tons</option><option>Units</option>
+                            <option>Metres</option><option>Sheets</option><option>Loads</option><option>Kg</option><option>Litres</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Site Location *</label>
+                        <select id="req-site">
+                            <option>Site A – Block 1</option><option>Site A – Block 2</option><option>Site A – Block 3</option>
+                            <option>Site B – Foundation</option><option>Site B – Shuttering</option>
+                            <option>Site C – Walls</option><option>Site C – Roof</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Required By Date *</label>
+                        <input type="date" id="req-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select id="req-priority">
+                            <option>Normal</option><option>High</option><option>Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group span3">
+                        <label>Notes / Additional Info</label>
+                        <textarea id="req-notes" rows="2" placeholder="Special requirements, brand preference, etc."></textarea>
+                    </div>
+                </div>
+                <div style="margin-top:18px; display:flex; gap:10px;">
+                    <button class="btn btn-primary" onclick="submitRequest()">📤 Submit Request</button>
+                    <button class="btn btn-outline"  onclick="clearRequestForm()">🔄 Clear</button>
+                </div>
+                <div id="req-alert" style="margin-top:10px;"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>📊 All Material Requests</h2><span id="req-count-badge" class="badge badge-primary">5 records</span></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Material</th><th>Qty</th><th>Site</th><th>Priority</th><th>Required By</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="req-tbody">
+                        <tr><td>#MR-001</td><td>Cement (OPC 53)</td><td>500 Bags</td><td>Site A – Block 3</td><td><span class="badge badge-danger">Urgent</span></td><td>05 Nov 2026</td><td><span class="badge badge-success">Approved</span></td></tr>
+                        <tr><td>#MR-002</td><td>TMT Steel Rods</td><td>2 Tons</td><td>Site B – Foundation</td><td><span class="badge badge-warning">High</span></td><td>08 Nov 2026</td><td><span class="badge badge-warning">Pending</span></td></tr>
+                        <tr><td>#MR-003</td><td>River Sand</td><td>10 Loads</td><td>Site A – Block 1</td><td><span class="badge badge-info">Normal</span></td><td>10 Nov 2026</td><td><span class="badge badge-info">In Transit</span></td></tr>
+                        <tr><td>#MR-004</td><td>Red Bricks</td><td>5,000 Units</td><td>Site C – Walls</td><td><span class="badge badge-danger">Urgent</span></td><td>03 Nov 2026</td><td><span class="badge badge-danger">Delayed</span></td></tr>
+                        <tr><td>#MR-005</td><td>Plywood Sheets</td><td>80 Sheets</td><td>Site B – Shuttering</td><td><span class="badge badge-info">Normal</span></td><td>01 Nov 2026</td><td><span class="badge badge-success">Delivered</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- end requests -->
+
+    <!-- ===================== PAGE: SUPPLIERS ===================== -->
+    <div class="page" id="page-suppliers">
+        <p class="page-title">🏭 Supplier Management</p>
+        <p class="page-subtitle">Register and manage all construction material suppliers</p>
+
+        <div class="card">
+            <div class="card-header"><h2>➕ Register New Supplier</h2></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Supplier Name *</label>
+                        <input type="text" id="sup-name" placeholder="e.g. BuildMart Supplies">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Person</label>
+                        <input type="text" id="sup-contact" placeholder="e.g. Rajesh Verma">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <input type="tel" id="sup-phone" placeholder="e.g. 9876543210">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="sup-email" placeholder="contact@supplier.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Materials Supplied</label>
+                        <select id="sup-materials">
+                            <option>Cement, Sand, Aggregate</option>
+                            <option>Steel, Iron</option>
+                            <option>Bricks, Tiles</option>
+                            <option>Wood, Plywood</option>
+                            <option>Electrical, Plumbing</option>
+                            <option>All Materials</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <select id="sup-rating">
+                            <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                            <option value="4">⭐⭐⭐⭐ Good</option>
+                            <option value="3">⭐⭐⭐ Average</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:18px; display:flex; gap:10px;">
+                    <button class="btn btn-primary" onclick="addSupplier()">➕ Add Supplier</button>
+                </div>
+                <div id="sup-alert" style="margin-top:10px;"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>📋 Registered Suppliers</h2><span id="sup-count-badge" class="badge badge-primary">5 suppliers</span></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Supplier Name</th><th>Contact</th><th>Phone</th><th>Materials</th><th>Rating</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="sup-tbody">
+                        <tr><td>SUP-01</td><td>BuildMart Supplies</td><td>Rajesh Verma</td><td>9876543210</td><td>Cement, Sand, Aggregate</td><td>⭐⭐⭐⭐⭐</td><td><span class="badge badge-success">Active</span></td></tr>
+                        <tr><td>SUP-02</td><td>SteelTech Industries</td><td>Mohan Lal</td><td>9123456780</td><td>Steel, Iron</td><td>⭐⭐⭐⭐</td><td><span class="badge badge-success">Active</span></td></tr>
+                        <tr><td>SUP-03</td><td>QuickBuild Co.</td><td>Suresh Nair</td><td>9000011122</td><td>All Materials</td><td>⭐⭐⭐⭐</td><td><span class="badge badge-success">Active</span></td></tr>
+                        <tr><td>SUP-04</td><td>BrickHouse Ltd.</td><td>Anil Tiwari</td><td>9988776655</td><td>Bricks, Tiles</td><td>⭐⭐⭐</td><td><span class="badge badge-warning">Under Review</span></td></tr>
+                        <tr><td>SUP-05</td><td>WoodWorks Pvt.</td><td>Kiran Desai</td><td>9111222333</td><td>Wood, Plywood</td><td>⭐⭐⭐⭐</td><td><span class="badge badge-success">Active</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- end suppliers -->
+
+    <!-- ===================== PAGE: QUOTATION COMPARISON ===================== -->
+    <div class="page" id="page-quotations">
+        <p class="page-title">📝 Quotation Comparison</p>
+        <p class="page-subtitle">Compare supplier quotes and select the best offer for your procurement</p>
+
+        <div class="alert alert-info">📬 Comparing quotes for <strong>Request #MR-001 — Cement (OPC 53), 500 Bags</strong></div>
+
+        <div class="quotes-grid">
+            <div class="quote-card best">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="sup-name">BuildMart Supplies</span>
+                    <span class="best-label">✅ BEST PRICE</span>
+                </div>
+                <div class="quote-price">₹3,20,000</div>
+                <div style="font-size:12.5px;color:#555;">₹640 / bag × 500 bags</div>
+                <div class="quote-detail">
+                    <div>📅 Delivery: 5–7 days</div>
+                    <div>💳 Payment: 30-day credit</div>
+                    <div>🚚 Transport: Free</div>
+                    <div>⭐ Rating: 4.8 / 5</div>
+                </div>
+                <button class="btn btn-success" style="width:100%;margin-top:12px;justify-content:center;" onclick="selectQuote(this,'BuildMart Supplies','₹3,20,000')">✅ Select This Quote</button>
+            </div>
+
+            <div class="quote-card">
+                <div class="sup-name">SteelTech Industries</div>
+                <div class="quote-price">₹3,50,000</div>
+                <div style="font-size:12.5px;color:#555;">₹700 / bag × 500 bags</div>
+                <div class="quote-detail">
+                    <div>📅 Delivery: 3–5 days</div>
+                    <div>💳 Payment: 15-day credit</div>
+                    <div>🚚 Transport: ₹2,500</div>
+                    <div>⭐ Rating: 4.2 / 5</div>
+                </div>
+                <button class="btn btn-outline" style="width:100%;margin-top:12px;justify-content:center;" onclick="selectQuote(this,'SteelTech Industries','₹3,50,000')">Select This Quote</button>
+            </div>
+
+            <div class="quote-card">
+                <div class="sup-name">QuickBuild Co.</div>
+                <div class="quote-price">₹3,75,000</div>
+                <div style="font-size:12.5px;color:#555;">₹750 / bag × 500 bags</div>
+                <div class="quote-detail">
+                    <div>📅 Delivery: 2–3 days</div>
+                    <div>💳 Payment: Advance</div>
+                    <div>🚚 Transport: Free</div>
+                    <div>⭐ Rating: 4.5 / 5</div>
+                </div>
+                <button class="btn btn-outline" style="width:100%;margin-top:12px;justify-content:center;" onclick="selectQuote(this,'QuickBuild Co.','₹3,75,000')">Select This Quote</button>
+            </div>
+        </div>
+
+        <div id="quote-alert"></div>
+
+        <div class="card">
+            <div class="card-header"><h2>📊 Quotation History</h2></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Request ID</th><th>Material</th><th>Supplier</th><th>Quote Amount</th><th>Delivery Days</th><th>Date</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>#MR-001</td><td>Cement 500 Bags</td><td>BuildMart Supplies</td><td>₹3,20,000</td><td>5–7 days</td><td>01 Nov 2026</td><td><span class="badge badge-success">Selected</span></td></tr>
+                        <tr><td>#MR-002</td><td>TMT Steel 2T</td><td>SteelTech Industries</td><td>₹1,40,000</td><td>3–5 days</td><td>31 Oct 2026</td><td><span class="badge badge-warning">Under Review</span></td></tr>
+                        <tr><td>#MR-003</td><td>River Sand 10 Loads</td><td>QuickBuild Co.</td><td>₹45,000</td><td>2 days</td><td>30 Oct 2026</td><td><span class="badge badge-info">Awaiting Approval</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- end quotations -->
+
+    <!-- ===================== PAGE: PURCHASE ORDERS ===================== -->
+    <div class="page" id="page-purchase">
+        <p class="page-title">🛒 Purchase Orders</p>
+        <p class="page-subtitle">Create, track, and manage all purchase orders</p>
+
+        <div class="two-col">
+            <!-- Budget Summary Card -->
+            <div class="card">
+                <div class="card-header"><h2>💰 Budget Overview</h2></div>
+                <div class="card-body">
+                    <div style="display:flex;flex-direction:column;gap:14px;">
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;">
+                                <span>Approved Orders</span><strong style="color:#2ecc71">17</strong>
+                            </div>
+                            <div class="progress-bar"><div class="progress-fill" style="width:71%;background:#2ecc71;"></div></div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;">
+                                <span>Pending</span><strong style="color:#f0a500">5</strong>
+                            </div>
+                            <div class="progress-bar"><div class="progress-fill" style="width:21%;background:#f0a500;"></div></div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;">
+                                <span>Cancelled</span><strong style="color:#e74c3c">2</strong>
+                            </div>
+                            <div class="progress-bar"><div class="progress-fill" style="width:8%;background:#e74c3c;"></div></div>
+                        </div>
+                    </div>
+                    <hr class="divider">
+                    <div style="font-size:13.5px;display:flex;flex-direction:column;gap:10px;">
+                        <div style="display:flex;justify-content:space-between;"><span>Total Budget</span><strong>₹5,00,000</strong></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Total Spent</span><strong style="color:#e74c3c">₹4,20,000</strong></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Remaining</span><strong style="color:#2ecc71">₹80,000</strong></div>
+                    </div>
+                    <div style="margin-top:14px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;"><span>Budget Used</span><span>84%</span></div>
+                        <div class="progress-bar" style="height:12px;">
+                            <div class="progress-fill" style="width:84%;background:linear-gradient(90deg,#2ecc71,#f0a500,#e74c3c);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create PO Form -->
+            <div class="card">
+                <div class="card-header"><h2>➕ Create Purchase Order</h2></div>
+                <div class="card-body">
+                    <div class="form-group" style="margin-bottom:13px;">
+                        <label>Select Request</label>
+                        <select>
+                            <option>#MR-002 — TMT Steel Rods (2T)</option>
+                            <option>#MR-003 — River Sand (10 Loads)</option>
+                            <option>#MR-004 — Red Bricks (5000 Units)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:13px;">
+                        <label>Select Supplier</label>
+                        <select>
+                            <option>SteelTech Industries</option>
+                            <option>BuildMart Supplies</option>
+                            <option>QuickBuild Co.</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:13px;">
+                        <label>Agreed Amount (₹)</label>
+                        <input type="number" placeholder="e.g. 140000">
+                    </div>
+                    <div class="form-group" style="margin-bottom:18px;">
+                        <label>Expected Delivery Date</label>
+                        <input type="date">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;justify-content:center;"
+                        onclick="alert('✅ Purchase Order Created Successfully! PO-2026-046 has been generated.')">
+                        📤 Create Purchase Order
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>📋 All Purchase Orders</h2></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>PO Number</th><th>Material</th><th>Supplier</th><th>Amount</th><th>Order Date</th><th>Expected Delivery</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>#PO-2026-041</td><td>Cement (OPC 53)</td><td>BuildMart Supplies</td><td>₹3,20,000</td><td>01 Nov 2026</td><td>07 Nov 2026</td><td><span class="badge badge-info">Dispatched</span></td></tr>
+                        <tr><td>#PO-2026-039</td><td>Plywood Sheets</td><td>WoodWorks Pvt.</td><td>₹32,000</td><td>28 Oct 2026</td><td>01 Nov 2026</td><td><span class="badge badge-success">Delivered</span></td></tr>
+                        <tr><td>#PO-2026-037</td><td>PVC Pipes</td><td>QuickBuild Co.</td><td>₹18,500</td><td>25 Oct 2026</td><td>30 Oct 2026</td><td><span class="badge badge-success">Delivered</span></td></tr>
+                        <tr><td>#PO-2026-035</td><td>Red Bricks</td><td>BrickHouse Ltd.</td><td>₹61,000</td><td>22 Oct 2026</td><td>29 Oct 2026</td><td><span class="badge badge-danger">Delayed</span></td></tr>
+                        <tr><td>#PO-2026-033</td><td>TMT Steel Rods</td><td>SteelTech Industries</td><td>₹1,40,000</td><td>20 Oct 2026</td><td>25 Oct 2026</td><td><span class="badge badge-warning">Pending</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- end purchase -->
+
+    <!-- ===================== PAGE: DELIVERY STATUS ===================== -->
+    <div class="page" id="page-delivery">
+        <p class="page-title">🚚 Delivery Status</p>
+        <p class="page-subtitle">Track real-time delivery status of all material orders</p>
+
+        <div class="two-col">
+            <div class="card">
+                <div class="card-header"><h2>📦 Active Deliveries</h2></div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>PO No.</th><th>Material</th><th>Supplier</th><th>Expected</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>#PO-041</td><td>Cement (OPC 53)</td><td>BuildMart</td><td>07 Nov</td><td><span class="badge badge-info">In Transit</span></td></tr>
+                            <tr><td>#PO-035</td><td>Red Bricks</td><td>BrickHouse</td><td>29 Oct</td><td><span class="badge badge-danger">Delayed</span></td></tr>
+                            <tr><td>#PO-033</td><td>TMT Steel</td><td>SteelTech</td><td>25 Oct</td><td><span class="badge badge-warning">Pending Pickup</span></td></tr>
+                            <tr><td>#PO-039</td><td>Plywood Sheets</td><td>WoodWorks</td><td>01 Nov</td><td><span class="badge badge-success">Delivered ✅</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h2>📍 Tracking — #PO-041 Cement</h2></div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item done">
+                            <div class="timeline-date">01 Nov 2026 — 10:30 AM</div>
+                            <div class="timeline-title">✅ Purchase Order Raised</div>
+                            <div class="timeline-sub">PO approved by procurement manager</div>
+                        </div>
+                        <div class="timeline-item done">
+                            <div class="timeline-date">02 Nov 2026 — 9:00 AM</div>
+                            <div class="timeline-title">✅ Supplier Confirmed</div>
+                            <div class="timeline-sub">BuildMart Supplies confirmed the order</div>
+                        </div>
+                        <div class="timeline-item done">
+                            <div class="timeline-date">03 Nov 2026 — 2:00 PM</div>
+                            <div class="timeline-title">✅ Material Loaded</div>
+                            <div class="timeline-sub">500 bags loaded at supplier warehouse</div>
+                        </div>
+                        <div class="timeline-item pending">
+                            <div class="timeline-date">05 Nov 2026 — Expected</div>
+                            <div class="timeline-title">🔄 In Transit</div>
+                            <div class="timeline-sub">Truck #HR-38-AB-4521 en route to Site A</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">07 Nov 2026 — Estimated</div>
+                            <div class="timeline-title">⏳ Delivery at Site A</div>
+                            <div class="timeline-sub">Awaiting delivery confirmation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>📊 Supplier Delivery Performance</h2></div>
+            <div class="card-body">
+                <div class="bar-chart">
+                    <div class="bar-row">
+                        <span class="bar-label">On-Time ✅</span>
+                        <div class="bar-track"><div class="bar-fill" style="width:62%;background:#2ecc71;"></div></div>
+                        <span class="bar-value">62%</span>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">Delayed ⚠️</span>
+                        <div class="bar-track"><div class="bar-fill" style="width:25%;background:#f0a500;"></div></div>
+                        <span class="bar-value">25%</span>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">Very Late 🔴</span>
+                        <div class="bar-track"><div class="bar-fill" style="width:13%;background:#e74c3c;"></div></div>
+                        <span class="bar-value">13%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- end delivery -->
+
+    <!-- ===================== PAGE: COST SIMULATOR ===================== -->
+    <div class="page" id="page-simulator">
+        <p class="page-title">🧮 Procurement Cost Simulator</p>
+        <p class="page-subtitle">Estimate the total cost of materials including GST, transport, and other charges</p>
+
+        <div class="sim-grid">
+            <!-- LEFT PANEL -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>📦 Add Materials</h2>
+                        <button class="btn btn-secondary" onclick="addMatRow()">➕ Add Row</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="mat-container"></div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+                            <button class="btn btn-primary" onclick="calcCost()">🧮 Calculate Total Cost</button>
+                            <button class="btn btn-outline"  onclick="resetSim()">🔄 Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2>⚙️ Additional Charges</h2></div>
+                    <div class="card-body">
+                        <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+                            <div class="form-group">
+                                <label>GST Rate (%)</label>
+                                <input type="number" id="gst" value="18" min="0" max="28">
+                            </div>
+                            <div class="form-group">
+                                <label>Transport Charges (₹)</label>
+                                <input type="number" id="transport" value="5000" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Labour / Handling (₹)</label>
+                                <input type="number" id="labour" value="2000" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Miscellaneous (₹)</label>
+                                <input type="number" id="misc" value="1000" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2>📋 Price Reference Chart</h2></div>
+                    <div class="card-body" style="padding:0;">
+                        <table>
+                            <thead><tr><th>Material</th><th>Unit</th><th>Approx. Price</th></tr></thead>
+                            <tbody>
+                                <tr><td>Cement (OPC 53)</td><td>Per Bag</td><td>₹350 – ₹420</td></tr>
+                                <tr><td>TMT Steel Rods</td><td>Per Ton</td><td>₹55,000 – ₹70,000</td></tr>
+                                <tr><td>River Sand</td><td>Per Load</td><td>₹4,000 – ₹6,000</td></tr>
+                                <tr><td>Red Bricks</td><td>Per 1000 pcs</td><td>₹8,000 – ₹12,000</td></tr>
+                                <tr><td>Coarse Aggregate</td><td>Per Ton</td><td>₹800 – ₹1,200</td></tr>
+                                <tr><td>Plywood (18mm)</td><td>Per Sheet</td><td>₹900 – ₹1,400</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Cost Summary -->
+            <div>
+                <div class="cost-panel">
+                    <h3>💰 Cost Breakdown Summary</h3>
+                    <div id="cost-breakdown">
+                        <div style="text-align:center;padding:30px 10px;opacity:.65;font-size:13.5px;line-height:1.7;">
+                            ← Add materials on the left<br>and click <strong>Calculate Total Cost</strong><br>to see the full breakdown here.
+                        </div>
+                    </div>
+                    <div class="cost-total">
+                        <span>GRAND TOTAL</span>
+                        <span id="grand-total">₹0</span>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top:22px;">
+                    <div class="card-header"><h2>💡 Cost Tips</h2></div>
+                    <div class="card-body" style="font-size:13.5px;display:flex;flex-direction:column;gap:10px;">
+                        <div>✅ Always get <strong>3+ quotes</strong> from different suppliers before finalising.</div>
+                        <div>✅ Bulk orders often qualify for <strong>5–15% discount</strong>.</div>
+                        <div>✅ Consolidate orders to <strong>reduce transport costs</strong>.</div>
+                        <div>✅ Check GST exemptions — <strong>sand &amp; aggregate may attract lower GST</strong>.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- end simulator -->
+
+    <!-- ===================== PAGE: TEAM INFO ===================== -->
+    <div class="page" id="page-team">
+        <p class="page-title">👥 Team Information</p>
+        <p class="page-subtitle">Project overview, team members, and submission details</p>
+
+        <!-- Project Overview Banner -->
+        <div class="card" style="background:var(--primary);color:white;border:none;">
+            <div class="card-body" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:center;">
+                <div>
+                    <div style="font-size:11px;opacity:.6;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Project Name</div>
+                    <div style="font-weight:700;font-size:15px;">Construction Material Procurement System</div>
+                </div>
+                <div>
+                    <div style="font-size:11px;opacity:.6;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Team Name</div>
+                    <div style="font-weight:700;font-size:15px;">The &lt;body&gt; Builders</div>
+                </div>
+                <div>
+                    <div style="font-size:11px;opacity:.6;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Team Leader</div>
+                    <div style="font-weight:700;font-size:15px;">Rudra Rastogi</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <!-- Team Members -->
+            <div class="card">
+                <div class="card-header"><h2>👤 Team Members</h2></div>
+                <div class="card-body">
+                    <div class="member-card">
+                        <div class="avatar" style="background:var(--primary);">RR</div>
+                        <div>
+                            <div class="member-name">Rudra Rastogi</div>
+                            <div class="member-reg">Reg No: 12607319 · Team Leader</div>
+                        </div>
+                        <span class="badge badge-primary" style="margin-left:auto;">Leader</span>
+                    </div>
+                    <div class="member-card">
+                        <div class="avatar" style="background:var(--secondary);">M2</div>
+                        <div>
+                            <div class="member-name">Team Member 2</div>
+                            <div class="member-reg">Reg No: 12606268</div>
+                        </div>
+                        <span class="badge badge-info" style="margin-left:auto;">Member</span>
+                    </div>
+                    <div class="member-card">
+                        <div class="avatar" style="background:var(--accent);">M3</div>
+                        <div>
+                            <div class="member-name">Team Member 3</div>
+                            <div class="member-reg">Reg No: 12615445</div>
+                        </div>
+                        <span class="badge badge-info" style="margin-left:auto;">Member</span>
+                    </div>
+                    <hr class="divider">
+                    <div style="font-size:13px;color:var(--text-muted);">Technology Stack</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;">
+                        <span class="badge badge-primary">HTML5</span>
+                        <span class="badge badge-info">CSS3</span>
+                        <span class="badge badge-warning">JavaScript</span>
+                        <span class="badge badge-success">Responsive Design</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submission Details -->
+            <div class="card">
+                <div class="card-header"><h2>📋 Submission Links</h2></div>
+                <div class="card-body">
+                    <div style="display:flex;flex-direction:column;gap:13px;">
+                        <div class="form-group">
+                            <label>🔗 GitHub Repository URL</label>
+                            <input type="text" placeholder="https://github.com/username/repo">
+                        </div>
+                        <div class="form-group">
+                            <label>🌐 Deployed Project URL</label>
+                            <input type="text" placeholder="https://your-project.netlify.app">
+                        </div>
+                        <div class="form-group">
+                            <label>🎥 Video Presentation URL</label>
+                            <input type="text" placeholder="https://youtu.be/your-video-link">
+                        </div>
+                        <button class="btn btn-primary" onclick="alert('Submission details saved locally!')">💾 Save Details</button>
+                    </div>
+                    <hr class="divider">
+                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Core Features Implemented</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                        <span class="badge badge-success">✅ Dashboard</span>
+                        <span class="badge badge-success">✅ Material Requests</span>
+                        <span class="badge badge-success">✅ Supplier Management</span>
+                        <span class="badge badge-success">✅ Quotation Comparison</span>
+                        <span class="badge badge-success">✅ Purchase Orders</span>
+                        <span class="badge badge-success">✅ Delivery Tracking</span>
+                        <span class="badge badge-success">✅ Cost Simulator</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- end team -->
+
+    <div class="footer">
+        🏗️ ProcureEase · Construction Material Procurement System · The &lt;body&gt; Builders · Rudra Rastogi (12607319) · 2026
+    </div>
+</div><!-- end main-content -->
+
+<!-- ============================== JAVASCRIPT ============================== -->
+<script>
+/* ---- NAVIGATION ---- */
+const ALL_PAGES = ['dashboard','requests','suppliers','quotations','purchase','delivery','simulator','team'];
+const PAGE_TITLES = {
+    dashboard:  ['📊 Dashboard',           'Live overview of all construction procurement activities'],
+    requests:   ['📋 Material Requests',   'Submit and manage material procurement requests'],
+    suppliers:  ['🏭 Suppliers',           'Register and manage construction material suppliers'],
+    quotations: ['📝 Quotation Comparison','Compare supplier quotes and select the best offer'],
+    purchase:   ['🛒 Purchase Orders',     'Create and track all purchase orders'],
+    delivery:   ['🚚 Delivery Status',     'Track real-time delivery status of all orders'],
+    simulator:  ['🧮 Cost Simulator',      'Estimate total procurement cost with all charges'],
+    team:       ['👥 Team Information',    'Project team and submission details']
+};
+
+function showPage(name) {
+    ALL_PAGES.forEach(p => {
+        document.getElementById('page-' + p).classList.remove('active');
+        document.getElementById('nav-' + p).classList.remove('active');
+    });
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+    document.getElementById('topbar-title').textContent = PAGE_TITLES[name][0];
+    document.getElementById('topbar-sub').textContent   = PAGE_TITLES[name][1];
+    window.scrollTo(0, 0);
+}
+
+/* ---- MATERIAL REQUESTS ---- */
+let reqCount = 5;
+let reqIndex = 6;
+
+function submitRequest() {
+    const material = document.getElementById('req-material').value;
+    const qty      = document.getElementById('req-qty').value.trim();
+    const unit     = document.getElementById('req-unit').value;
+    const site     = document.getElementById('req-site').value;
+    const date     = document.getElementById('req-date').value;
+    const priority = document.getElementById('req-priority').value;
+
+    if (!material || !qty || !date) {
+        showAlert('req-alert', 'warning', '⚠️ Please fill in Material, Quantity, and Required By Date!');
+        return;
+    }
+
+    const priClass = { Normal:'badge-info', High:'badge-warning', Urgent:'badge-danger' };
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>#MR-00${reqIndex++}</td>
+        <td>${material}</td>
+        <td>${qty} ${unit}</td>
+        <td>${site}</td>
+        <td><span class="badge ${priClass[priority]}">${priority}</span></td>
+        <td>${formatDate(date)}</td>
+        <td><span class="badge badge-warning">Pending</span></td>`;
+    document.getElementById('req-tbody').prepend(row);
+
+    reqCount++;
+    document.getElementById('req-count-badge').textContent = reqCount + ' records';
+    clearRequestForm();
+    showAlert('req-alert', 'success', '✅ Request #MR-00' + (reqIndex-1) + ' submitted successfully!');
+    // Update dashboard stat
+    document.getElementById('stat-total-req').textContent = 24 + (reqCount - 5);
+}
+
+function clearRequestForm() {
+    ['req-material','req-qty','req-unit','req-site','req-date','req-priority','req-notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+    });
+}
+
+/* ---- SUPPLIERS ---- */
+let supCount = 5;
+let supIndex = 6;
+
+function addSupplier() {
+    const name     = document.getElementById('sup-name').value.trim();
+    const contact  = document.getElementById('sup-contact').value.trim();
+    const phone    = document.getElementById('sup-phone').value.trim();
+    const email    = document.getElementById('sup-email').value.trim();
+    const mats     = document.getElementById('sup-materials').value;
+    const ratingVal= document.getElementById('sup-rating').value;
+
+    if (!name || !phone) {
+        showAlert('sup-alert', 'warning', '⚠️ Supplier Name and Phone Number are required!');
+        return;
+    }
+    if (phone.length < 10) {
+        showAlert('sup-alert', 'warning', '⚠️ Please enter a valid 10-digit phone number!');
+        return;
+    }
+
+    const stars = '⭐'.repeat(parseInt(ratingVal));
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>SUP-0${supIndex++}</td>
+        <td>${name}</td>
+        <td>${contact || '—'}</td>
+        <td>${phone}</td>
+        <td>${mats}</td>
+        <td>${stars}</td>
+        <td><span class="badge badge-success">Active</span></td>`;
+    document.getElementById('sup-tbody').prepend(row);
+
+    supCount++;
+    document.getElementById('sup-count-badge').textContent = supCount + ' suppliers';
+    ['sup-name','sup-contact','sup-phone','sup-email'].forEach(id => document.getElementById(id).value = '');
+    showAlert('sup-alert', 'success', '✅ Supplier "' + name + '" registered successfully!');
+}
+
+/* ---- QUOTATIONS ---- */
+function selectQuote(btn, supplier, amount) {
+    showAlert('quote-alert', 'success',
+        '✅ Quote from <strong>' + supplier + '</strong> selected! Amount: <strong>' + amount + '</strong>. Creating Purchase Order...');
+    document.querySelectorAll('.quote-card .btn').forEach(b => {
+        b.textContent = 'Select This Quote';
+        b.className = 'btn btn-outline';
+        b.style.width = '100%';
+        b.style.marginTop = '12px';
+        b.style.justifyContent = 'center';
+    });
+    btn.textContent = '✅ Selected';
+    btn.className = 'btn btn-success';
+    btn.style.width = '100%';
+    btn.style.marginTop = '12px';
+    btn.style.justifyContent = 'center';
+}
+
+/* ---- COST SIMULATOR ---- */
+const MATERIALS_DB = [
+    { name:'Cement (OPC 53)',   unit:'Bags',       price: 380  },
+    { name:'TMT Steel Rods',    unit:'Tons',       price: 62000},
+    { name:'River Sand',        unit:'Loads',      price: 5000 },
+    { name:'Red Bricks',        unit:'1000 pcs',   price: 10000},
+    { name:'Coarse Aggregate',  unit:'Tons',       price: 1000 },
+    { name:'Plywood (18mm)',    unit:'Sheets',     price: 1200 },
+    { name:'Paint (Exterior)',  unit:'Litres',     price: 250  },
+    { name:'PVC Pipes (4in)',   unit:'Metres',     price: 120  },
+    { name:'Electrical Wire',   unit:'Metres',     price: 45   },
+    { name:'Gravel',            unit:'Tons',       price: 900  },
+];
+
+let matRowId = 0;
+
+function addMatRow() {
+    matRowId++;
+    const opts = MATERIALS_DB.map(m =>
+        `<option value="${m.price}" data-unit="${m.unit}">${m.name}</option>`
+    ).join('');
+
+    const div = document.createElement('div');
+    div.className = 'mat-row';
+    div.id = 'mrow-' + matRowId;
+    div.innerHTML = `
+        <div>
+            <label>Material</label>
+            <select onchange="syncUnit(${matRowId},this)">
+                ${opts}
+            </select>
+        </div>
+        <div>
+            <label>Quantity</label>
+            <input type="number" id="mq-${matRowId}" value="1" min="1">
+        </div>
+        <div>
+            <label id="ul-${matRowId}">Bags</label>
+            <div style="padding:8px 10px;background:#e8eef4;border-radius:7px;font-size:13px;font-weight:600;color:var(--primary);"
+                 id="up-${matRowId}">₹380/unit</div>
+        </div>
+        <button class="remove-btn" onclick="removeMatRow(${matRowId})">✕</button>`;
+    document.getElementById('mat-container').appendChild(div);
+}
+
+function syncUnit(id, sel) {
+    const opt = sel.options[sel.selectedIndex];
+    document.getElementById('ul-' + id).textContent = opt.dataset.unit;
+    document.getElementById('up-' + id).textContent = '₹' + Number(opt.value).toLocaleString('en-IN') + '/unit';
+}
+
+function removeMatRow(id) {
+    const el = document.getElementById('mrow-' + id);
+    if (el) el.remove();
+}
+
+function calcCost() {
+    const rows = document.querySelectorAll('.mat-row');
+    if (!rows.length) {
+        alert('⚠️ Please add at least one material row first!');
+        return;
+    }
+
+    let subtotal = 0;
+    let lines = '';
+
+    rows.forEach(row => {
+        const sel   = row.querySelector('select');
+        const qtyEl = row.querySelector('input[type=number]');
+        const price = parseFloat(sel.value) || 0;
+        const qty   = parseFloat(qtyEl ? qtyEl.value : 1) || 0;
+        const mname = sel.options[sel.selectedIndex].text;
+        const unit  = sel.options[sel.selectedIndex].dataset.unit;
+        const line  = price * qty;
+        subtotal   += line;
+        lines += `<div class="cost-line">
+            <span>${mname} × ${qty} ${unit}</span>
+            <span>₹${line.toLocaleString('en-IN')}</span>
+        </div>`;
+    });
+
+    const gst       = parseFloat(document.getElementById('gst').value)       || 0;
+    const transport = parseFloat(document.getElementById('transport').value)  || 0;
+    const labour    = parseFloat(document.getElementById('labour').value)     || 0;
+    const misc      = parseFloat(document.getElementById('misc').value)       || 0;
+
+    const gstAmt    = subtotal * gst / 100;
+    const grandTotal= subtotal + gstAmt + transport + labour + misc;
+
+    const html = `
+        ${lines}
+        <div class="cost-line" style="border-top:1px solid rgba(255,255,255,.3);margin-top:8px;padding-top:10px;">
+            <span>📦 Materials Subtotal</span><span>₹${subtotal.toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
+        </div>
+        <div class="cost-line"><span>🧾 GST @ ${gst}%</span><span>₹${gstAmt.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>
+        <div class="cost-line"><span>🚚 Transport</span><span>₹${transport.toLocaleString('en-IN')}</span></div>
+        <div class="cost-line"><span>👷 Labour / Handling</span><span>₹${labour.toLocaleString('en-IN')}</span></div>
+        <div class="cost-line"><span>📋 Miscellaneous</span><span>₹${misc.toLocaleString('en-IN')}</span></div>`;
+
+    document.getElementById('cost-breakdown').innerHTML = html;
+    document.getElementById('grand-total').textContent  =
+        '₹' + grandTotal.toLocaleString('en-IN', {maximumFractionDigits: 0});
+}
+
+function resetSim() {
+    document.getElementById('mat-container').innerHTML = '';
+    document.getElementById('cost-breakdown').innerHTML =
+        '<div style="text-align:center;padding:30px 10px;opacity:.65;font-size:13.5px;line-height:1.7;">' +
+        '← Add materials on the left<br>and click <strong>Calculate Total Cost</strong><br>to see the full breakdown here.</div>';
+    document.getElementById('grand-total').textContent = '₹0';
+    matRowId = 0;
+}
+
+/* ---- HELPERS ---- */
+function showAlert(containerId, type, msg) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(() => { if (el) el.innerHTML = ''; }, 4000);
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+/* ---- INIT: add 2 default simulator rows ---- */
+addMatRow();
+addMatRow();
+</script>
+</body>
+</html>
